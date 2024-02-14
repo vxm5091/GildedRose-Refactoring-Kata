@@ -1,69 +1,50 @@
-export class Item {
-  name: string;
-  sellIn: number;
-  quality: number;
-
-  constructor(name, sellIn, quality) {
-    this.name = name;
-    this.sellIn = sellIn;
-    this.quality = quality;
-  }
-}
+import { ICustomItem } from './interfaces';
+import {
+  AgedBrie,
+  BackstagePasses,
+  ConjuredItem,
+  Item,
+  LegendaryItem,
+  RegularItem,
+} from './inventory';
 
 export class GildedRose {
+  
+  // stores the respective custom class for each esoteric item
+  // removes hard coded logic from getCustomItem()
+  private static itemClassReference = [
+    {
+      name: 'Backstage passes to a TAFKAL80ETC concert',
+      class: BackstagePasses,
+    },
+    { name: 'Aged Brie', class: AgedBrie },
+    { name: 'Sulfuras, Hand of Ragnaros', class: LegendaryItem },
+    { pattern: 'Conjured', class: ConjuredItem },
+  ];
   items: Array<Item>;
 
   constructor(items = [] as Array<Item>) {
     this.items = items;
   }
 
-  updateQuality() {
-    for (let i = 0; i < this.items.length; i++) {
-      if (this.items[i].name != 'Aged Brie' && this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-        if (this.items[i].quality > 0) {
-          if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-            this.items[i].quality = this.items[i].quality - 1
-          }
-        }
-      } else {
-        if (this.items[i].quality < 50) {
-          this.items[i].quality = this.items[i].quality + 1
-          if (this.items[i].name == 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].sellIn < 11) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-            if (this.items[i].sellIn < 6) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-          }
-        }
-      }
-      if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-        this.items[i].sellIn = this.items[i].sellIn - 1;
-      }
-      if (this.items[i].sellIn < 0) {
-        if (this.items[i].name != 'Aged Brie') {
-          if (this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].quality > 0) {
-              if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-                this.items[i].quality = this.items[i].quality - 1
-              }
-            }
-          } else {
-            this.items[i].quality = this.items[i].quality - this.items[i].quality
-          }
-        } else {
-          if (this.items[i].quality < 50) {
-            this.items[i].quality = this.items[i].quality + 1
-          }
-        }
-      }
-    }
+  // find matching class based on full name match or partial pattern match ('Conjured')
+  // otherwise return RegularItem instance
+  getCustomItem(item: Item): ICustomItem {
+    const itemClass =
+      GildedRose.itemClassReference.find(
+        ic =>
+          item.name === ic.name ||
+          (ic.pattern && item.name.includes(ic.pattern)),
+      )?.class || RegularItem;
+    return new itemClass(item);
+  }
 
-    return this.items;
+  updateQuality() {
+    return this.items.map(item => {
+      const customItem = this.getCustomItem(item);
+      const qualityChange = customItem.getRateOfQualityChange()
+      customItem.update(qualityChange, customItem.isLegendary || false)
+      return customItem.item;
+    });
   }
 }

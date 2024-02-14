@@ -1,8 +1,9 @@
-import { Item, GildedRose } from '../app/gilded-rose';
+import { GildedRose } from '@/gilded-rose';
+import { Item } from '@/inventory';
 
 console.log("OMGHAI!")
 
-const items = [
+export const items = [
   new Item("+5 Dexterity Vest", 10, 20), //
   new Item("Aged Brie", 2, 0), //
   new Item("Elixir of the Mongoose", 5, 7), //
@@ -17,7 +18,7 @@ const items = [
 
 const gildedRose = new GildedRose(items);
 
-let days: number = 2;
+let days: number = 16;
 if (process.argv.length > 2) {
     days = +process.argv[2];
   }
