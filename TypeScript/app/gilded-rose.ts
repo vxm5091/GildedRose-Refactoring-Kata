@@ -42,8 +42,7 @@ export class GildedRose {
   updateQuality() {
     return this.items.map(item => {
       const customItem = this.getCustomItem(item);
-      const qualityChange = customItem.getRateOfQualityChange()
-      customItem.update(qualityChange, customItem.isLegendary || false)
+      customItem.update()
       return customItem.item;
     });
   }

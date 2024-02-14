@@ -14,52 +14,56 @@ export class Item {
 
 /* ------------------------------------------ Base Class ------------------------------------------ */
 /**
- * abstracts the updating of quality and sellIn values
+ * abstracts the updating of quality and sellIn values on the Item class dep
  *  */
-class CustomItemBase {
-  item: Item;
-  private readonly _maxQuality = 50;
-  private readonly _minQuality = 0;
+abstract class CustomItemBase {
+  private readonly _item: Item;
 
   constructor(item: Item) {
-    this.item = item;
+    this._item = item;
   }
 
-  private _updateQuality(change: number, isLegendary = false) {
-    let updatedQuality = this.item.quality + change;
-
-    // logic doesn't apply to legendary item which remains at constant quality or possibly increases
-    if (!isLegendary) {
-      updatedQuality = Math.min(updatedQuality, this._maxQuality); // can't go above max value (50)
-      updatedQuality = Math.max(updatedQuality, this._minQuality); // can't go below min value (0)
-    }
-
-    this.item.quality = updatedQuality;
+  get item() {
+    return this._item;
   }
 
-  private _updateSellIn(isLegendary = false) {
-    if (isLegendary) return;
-    this.item.sellIn--;
+  // can be overridden as needed by subclasses like Legendary Item
+  protected get maxQuality(): number {
+    return 50;
   }
 
-  public update(change: number, isLegendary = false) {
-    this._updateSellIn(isLegendary);
-    this._updateQuality(change, isLegendary);
+  protected get minQuality(): number {
+    return 0;
   }
-}
 
-/* ------------------------------------------ Custom Item Classes ------------------------------------------ */
-/**
- * @method getRateOfQualityChange() defines item-specific logic
- * @property isLegendary (optional) bypasses max quality value and sellIn change
- *  */
-export class RegularItem extends CustomItemBase implements ICustomItem {
-  getRateOfQualityChange() {
+  // Can be overridden by subclasses like Legendary Item that don't need to be sold
+  protected get shouldUpdateSellIn(): boolean {
+    return true;
+  }
+
+  // default behavior. can be overridden by individual subclasses as needed
+  public getRateOfQualityChange() {
     let change = -1;
     if (this.item.sellIn < 0) change = -2;
     return change;
   }
+
+  public update() {
+    if (this.shouldUpdateSellIn) {
+      this.item.sellIn--;
+    }
+    const change = this.getRateOfQualityChange();
+    let updatedQuality = this.item.quality + change;
+
+    updatedQuality = Math.min(updatedQuality, this.maxQuality); // can't go above max value
+    updatedQuality = Math.max(updatedQuality, this.minQuality); // can't go below min value
+
+    this._item.quality = updatedQuality;
+  }
 }
+
+/* ------------------------------------------ Custom Item Classes ------------------------------------------ */
+export class RegularItem extends CustomItemBase implements ICustomItem {}
 
 export class BackstagePasses extends CustomItemBase implements ICustomItem {
   getRateOfQualityChange() {
@@ -72,8 +76,18 @@ export class BackstagePasses extends CustomItemBase implements ICustomItem {
   }
 }
 
+/**
+ *  overrides maxQuality() and shouldUpdateSellIn() methods
+ * */
 export class LegendaryItem extends CustomItemBase implements ICustomItem {
-  isLegendary = true;
+  protected get maxQuality(): number {
+    return Infinity;
+  }
+
+  protected get shouldUpdateSellIn(): boolean {
+    return false;
+  }
+
   getRateOfQualityChange() {
     return 0;
   }

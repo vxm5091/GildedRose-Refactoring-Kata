@@ -13,59 +13,57 @@ class Item
 end
 
 # ------------------------------------------ Base Class ------------------------------------------ */
-# abstracts the updating of quality and sellIn values in the Item class dependency
+# abstracts the logic of "updating an item" and provides subclasses with necessary overrides to define specific behavior
 class CustomItemBase
-  attr_accessor :item
+  attr_reader :item
 
   def initialize(item)
     @item = item
-    @max_quality = 50
-    @min_quality = 0
   end
 
-  def legendary?
-    false
+  protected
+
+  # Can be overridden by subclasses like Legendary Item that don't need to be sold
+  def should_update_sell_in?
+    true
   end
 
-  private
-
-  attr_reader :max_quality, :min_quality
-
-  def update_quality(change)
-    updated_quality = @item.quality + change
-    unless legendary?
-      updated_quality = [updated_quality, max_quality].min
-      updated_quality = [updated_quality, min_quality].max
-    end
-
-    @item.quality = updated_quality
+  # can be overridden as needed by subclasses like Legendary Item
+  def max_quality
+    50
   end
 
-  def update_sell_in
-    @item.sell_in -= 1 unless legendary?
+  def min_quality
+    0
   end
 
-  public
-
-  def update(change)
-    update_sell_in
-    update_quality(change)
-  end
-end
-
-
-# ------------------------------------------ Custom Item Classes ------------------------------------------ */
-# getRateOfQualityChange() defines item-specific logic
-# isLegendary (optional) bypasses max quality value and sellIn change
-class RegularItem < CustomItemBase
+  # default behavior. can be overridden by individual subclasses as needed
   def rate_of_quality_change
     change = -1
     change = -2 if item.sell_in.negative?
     change
   end
+
+  public
+
+  def update()
+    @item.sell_in -= 1 if should_update_sell_in?
+    updated_quality = item.quality + rate_of_quality_change
+    updated_quality = [updated_quality, max_quality].min # can't be higher than max 
+    updated_quality = [updated_quality, min_quality].max # can't be lower than min
+    @item.quality = updated_quality
+  end
+end
+
+# ------------------------------------------ Custom Item Classes ------------------------------------------ */
+# getRateOfQualityChange() defines item-specific logic
+# isLegendary (optional) bypasses max quality value and sellIn change
+class RegularItem < CustomItemBase
 end
 
 class BackstagePasses < CustomItemBase
+  protected
+
   def rate_of_quality_change
     sell_in = item.sell_in
     quality = item.quality
@@ -81,22 +79,32 @@ class BackstagePasses < CustomItemBase
 end
 
 class LegendaryItem < CustomItemBase
+  protected
+
   def rate_of_quality_change
     0
   end
 
-  def legendary?
-    true
+  def should_update_sell_in?
+    false
+  end
+
+  def max_quality
+    Float::INFINITY
   end
 end
 
 class AgedBrie < CustomItemBase
+  protected
+
   def rate_of_quality_change
     1
   end
 end
 
 class ConjuredItem < CustomItemBase
+  protected
+
   def rate_of_quality_change
     # 	degrades in quality 2x rate of normal item
     # 	get rate of change if this were a normal item

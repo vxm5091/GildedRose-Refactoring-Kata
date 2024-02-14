@@ -1,7 +1,5 @@
 require_relative 'inventory'
 
-
-
 class GildedRose
   # stores the respective custom class for each esoteric item
   # removes hardcoded logic from getCustomItem()
@@ -23,7 +21,7 @@ class GildedRose
     @items = items
   end
 
-  #find matching class based on full name patch or partial pattern match ('Conjured')
+  # find matching class based on full name patch or partial pattern match ('Conjured')
   # otherwise return RegularItem instance
   def get_custom_item(item)
     class_ref = GildedRose.item_class_reference.find do |ic|
@@ -36,22 +34,8 @@ class GildedRose
   def update_quality()
     @items.each do |item|
       custom_item = get_custom_item(item)
-      quality_change = custom_item.rate_of_quality_change
-      custom_item.update(quality_change)
+      custom_item.update()
     end
   end
 end
 
-class Item
-  attr_accessor :name, :sell_in, :quality
-
-  def initialize(name, sell_in, quality)
-    @name = name
-    @sell_in = sell_in
-    @quality = quality
-  end
-
-  def to_s()
-    "#{@name}, #{@sell_in}, #{@quality}"
-  end
-end
